@@ -219,12 +219,25 @@ pre.regeln{background:#1E2A33;color:#E6EEF5;padding:14px 16px;border-radius:var(
 
 /* ---------- Öffentlicher Prüfnachweis ---------- */
 .oeff{position:fixed;inset:0;z-index:400;background:linear-gradient(180deg,#F6F8FA 0%,#EEF1F4 100%);overflow:auto;padding:18px 12px 40px}
-.oeffKarte{background:#fff;max-width:860px;margin:0 auto;border-radius:14px;box-shadow:var(--schatten);padding:20px 22px;border-top:5px solid var(--blau)}
+.oeffKarte{background:#fff;max-width:560px;margin:0 auto;border-radius:14px;box-shadow:var(--schatten);padding:20px 22px;border-top:5px solid var(--blau)}
 .oeffKopf{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
 .oeffTitel{font-size:17px;font-weight:700;color:var(--blau-dunkel)}
 .oeffLogo{height:34px}
 .oeff h1{font-size:20px;color:var(--blau-dunkel);margin:12px 0 6px}
-@media(max-width:700px){.oeffKarte{padding:16px 14px}.oeff .protRahmen{zoom:.6}}
+.oeffName{font-size:26px;font-weight:700;color:var(--blau-dunkel);line-height:1.2;margin-top:18px}
+.oeffOrt{font-size:18px;margin-top:6px}
+.oeffStatus{margin-top:18px;border-radius:var(--radius);padding:18px 18px;display:flex;align-items:center;gap:16px;border:2px solid}
+.oeffStatus .sym{font-size:38px;line-height:1;width:44px;text-align:center}
+.oeffStatus b{display:block;font-size:24px;line-height:1.2}
+.oeffStatus span{display:block;font-size:16px;margin-top:4px}
+.oeffStatus.ok{background:#EDF5E5;border-color:#9CC67E} .oeffStatus.ok b{color:#3C6B1E}
+.oeffStatus.warn{background:#FDF6E3;border-color:#E4B23C} .oeffStatus.warn b{color:#8A6207}
+.oeffStatus.krit{background:#FBEEED;border-color:#E39A93} .oeffStatus.krit b{color:var(--rot)}
+.oeffStatus.neu,.oeffStatus.grau{background:#F4F6F8;border-color:var(--grau-linie)} .oeffStatus.neu b,.oeffStatus.grau b{color:var(--text-hell)}
+.oeffKlein{font-size:13px;color:var(--text-hell);margin-top:14px}
+.oeffKnopf{margin-top:22px;display:flex;gap:10px;flex-wrap:wrap}
+.oeffKnopf .btn{flex:1;padding:13px 16px;font-size:15px}
+@media(max-width:700px){.oeffKarte{padding:16px 14px}}
 
 /* ---------- Tablet-Betrieb ---------- */
 .tabletband{background:#7A5C2E;color:#fff;padding:6px 20px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
@@ -332,7 +345,7 @@ pre.regeln{background:#1E2A33;color:#E6EEF5;padding:14px 16px;border-radius:var(
 <div class="testleiste" id="testleiste" style="display:none">
   <b>TESTMODUS</b>
   <label>Ansicht als Rolle <select id="testRolle" onchange="testRolleSetzen(this.value)">
-    <option value="pruefer">Pr&uuml;fer</option><option value="azubi">Auszubildender</option><option value="leser">Lesezugriff</option><option value="tablet">Tablet (DGUV)</option></select></label>
+    <option value="pruefer">Pr&uuml;fer</option><option value="azubi">Auszubildender</option><option value="leser">Lesezugriff</option><option value="tablet">Tablet (DGUV)</option><option value="fremd">Fremdes Handy (ohne Login)</option></select></label>
   <button class="btn sek" onclick="el('importDatei').click()">Demodaten einspielen</button>
   <button class="btn rot" onclick="testLeeren()">Alles l&ouml;schen</button>
   <span id="testHinweis">Lokaler Modus: Daten liegen nur in diesem Browser. Zum Echtbetrieb Firebase eintragen (siehe Einstellungen &rarr; Einrichtung).</span>
@@ -522,7 +535,7 @@ pre.regeln{background:#1E2A33;color:#E6EEF5;padding:14px 16px;border-radius:var(
         <label class="breit">Adresse der Seite (GitHub)<input type="text" id="eiQrUrl" placeholder="z. B. https://name.github.io/dguv/ – leer = aktuelle Adresse"></label>
       </div>
       <div class="hinweis" id="qrStatus" style="margin:10px 0 0"></div>
-      <p class="formhinweis">Jedes Etikett enth&auml;lt diese Adresse plus einen geheimen Ger&auml;teschl&uuml;ssel. Mit <b>jedem</b> Handy gescannt, &ouml;ffnet sich ohne Login der Pr&uuml;fnachweis mit dem letzten Protokoll (als PDF speicherbar). Mitarbeiter mit Login sehen dar&uuml;ber die volle Ger&auml;tekarte.
+      <p class="formhinweis">Jedes Etikett enth&auml;lt diese Adresse plus einen geheimen Ger&auml;teschl&uuml;ssel. Mit <b>jedem</b> Handy gescannt, zeigt sich ohne Login nur das Wichtigste: Ger&auml;tename, Standort, gepr&uuml;ft oder nicht und wie lange die Pr&uuml;fung noch gilt. Mitarbeiter mit Login kommen dar&uuml;ber zur vollen Ger&auml;tekarte.
         <b>Vor dem ersten echten Etikettendruck die endg&uuml;ltige Adresse eintragen</b> &ndash; sie steht danach fest im Code. Der Schl&uuml;ssel &auml;ndert sich nie, das Etikett bleibt dauerhaft g&uuml;ltig.</p>
       <div class="werkzeuge" style="margin-top:6px"><button class="btn" onclick="einstSpeichern()">Speichern</button><button class="btn sek" onclick="qrAdresseUebernehmen()">Aktuelle Adresse &uuml;bernehmen</button><button class="btn sek" onclick="oeffentlichAlle()">Pr&uuml;fnachweise f&uuml;r alle Ger&auml;te erzeugen</button></div>
     </div>
@@ -1989,9 +2002,9 @@ function oeffentlichErgaenzen(ops){
 }
 function oeffentlichDoc(g, p){
   const o = {};
-  ['inv','bereich','bezeichnung','art','hersteller','typ','seriennr','standort','sk','laenge','heiz','buero','frist','status','letzte','naechste','ergebnis'].forEach(k => o[k] = g[k] == null ? '' : g[k]);
-  o.fristMonate = fristVon(g); o.abteilung = einst().abteilung; o.warnTage = einst().warnTage; o.aktualisiert = new Date().toISOString();
-  o.protokoll = p ? sauber(p) : null;
+  /* Bewusst nur das Nötigste – keine Namen, keine Messwerte, kein Protokoll */
+  ['inv','bezeichnung','standort','status','letzte','naechste','ergebnis'].forEach(k => o[k] = g[k] == null ? '' : g[k]);
+  o.abteilung = einst().abteilung; o.warnTage = einst().warnTage; o.aktualisiert = new Date().toISOString();
   return o;
 }
 function qrSvg(text, groesse, einheit){
@@ -2194,6 +2207,7 @@ function geraetKarte(inv){
   const fuss = (darfErfassen() && g.status !== 'ausgesondert' ? '<button class="btn" onclick="pruefungDialog(\''+esc(inv)+'\')">Prüfung erfassen</button>' : '')+
     (darfErfassen() ? '<button class="btn sek" onclick="geraetDialog(\''+esc(inv)+'\')">Bearbeiten</button><button class="btn sek" onclick="etikettEinzeln(\''+esc(inv)+'\')">Etikett drucken</button>' : '')+
     (istPruefer() ? (g.status === 'ausgesondert' ? '<button class="btn sek" onclick="aussondern(\''+esc(inv)+'\', false)">Wieder in Betrieb</button>' : '<button class="btn rot" onclick="aussondern(\''+esc(inv)+'\', true)">Aussondern</button>') : '')+
+    '<button class="btn sek" onclick="fremdVorschau(\''+esc(inv)+'\')">&#128241; Ansicht fremdes Handy</button>'+
     '<button class="btn sek nurGross" onclick="schliesse()">Schließen</button>';
   dialog(esc(inv), esc(bereichName(g.bereich)), rumpf, fuss, true);
 }
@@ -2589,7 +2603,7 @@ function scanSchleife(){
     if(r && r.data) treffer(r.data); else setTimeout(scanSchleife, 120);
   }
 }
-function treffer(text){ scanStop(); try { navigator.vibrate && navigator.vibrate(70); } catch(e){} oeffneGeraet(codeZuInv(text)); }
+function treffer(text){ scanStop(); try { navigator.vibrate && navigator.vibrate(70); } catch(e){} if(fremdModus){ schliesse(); return fremdOeffnen(text); } oeffneGeraet(codeZuInv(text)); }
 function scanStop(){ scanLauf = false; if(scanStrom){ scanStrom.getTracks().forEach(t => t.stop()); scanStrom = null; } }
 function manuellSuchen(){ const v = el('scanManuell').value; if(v.trim()) oeffneGeraet(codeZuInv(v)); }
 
@@ -2755,6 +2769,12 @@ function firebaseStarten(){
   weiter();
 }
 function testRolleSetzen(r, still){
+  fremdModus = r === 'fremd'; if(!fremdModus) el('oeffBox').innerHTML = '';
+  if(r === 'fremd'){
+    try { sessionStorage.setItem('dguvTestRolle', r); } catch(e){}
+    if(tabletKonto){ tabletKonto = false; tabletPerson = null; clearTimeout(standbyTimer); standbyAktiv = false; el('standbyBox').innerHTML = ''; }
+    meineMail = 'fremd'; rolle = 'keine'; meinName = ''; rolleAnwenden(); schliesse(); fremdStart(); return;
+  }
   if(r === 'tablet'){
     try { sessionStorage.setItem('dguvTestRolle', r); } catch(e){}
     tabletKonto = true; meineMail = 'tablet@lokal'; rolle = 'keine'; meinName = ''; rolleAnwenden(); schliesse(); standbyAn(false); return;
@@ -3033,50 +3053,83 @@ function testRolleVerlassen(){
 }
 
 
-/* ---------- Öffentlicher Prüfnachweis (QR-Scan mit beliebigem Handy, ohne Login) ---------- */
-let oeffAktuell = null;
+/* ---------- Öffentlicher Prüfstatus (QR-Scan mit beliebigem Handy, ohne Login) ----------
+   Zeigt bewusst nur: Gerätename, Standort, geprüft ja/nein und wie lange die Prüfung noch gilt. */
+let oeffAktuell = null, fremdModus = false;
 const oeffSchluessel = () => { const m = location.hash.match(/[#&]t=([A-Za-z0-9]+)/); return m ? m[1].toUpperCase() : null; };
 function oeffentlichLaden(){
   const k = oeffSchluessel(); if(!k) return;
-  el('oeffBox').innerHTML = '<div class="oeff"><div class="oeffKarte"><p class="sub" style="text-align:center;padding:40px 0">Prüfnachweis wird geladen …</p></div></div>';
-  if(!cloudAktiv) return oeffentlichZeigen(D.oeffentlich[k] || null, k);
-  db.collection('oeffentlich').doc(k).get().then(s => oeffentlichZeigen(s.exists ? s.data() : null, k))
-    .catch(e => oeffentlichZeigen(null, k, e.code === 'unavailable' ? 'Keine Internetverbindung.' : 'Abruf fehlgeschlagen ('+e.code+').'));
+  el('oeffBox').innerHTML = '<div class="oeff"><div class="oeffKarte"><p class="sub" style="text-align:center;padding:40px 0">Prüfstatus wird geladen …</p></div></div>';
+  if(!cloudAktiv) return oeffentlichZeigen(D.oeffentlich[k] || null);
+  db.collection('oeffentlich').doc(k).get().then(s => oeffentlichZeigen(s.exists ? s.data() : null))
+    .catch(e => oeffentlichZeigen(null, e.code === 'unavailable' ? 'Keine Internetverbindung.' : 'Abruf fehlgeschlagen ('+e.code+').'));
 }
-function oeffentlichZeigen(d, k, fehlerText){
+function restLaufzeit(naechste){
+  const t = tageBis(naechste);
+  if(t >= 60){ const m = Math.round(t / 30.44); return 'noch '+m+' Monat'+(m === 1 ? '' : 'e')+' gültig'; }
+  return t === 0 ? 'nur noch heute gültig' : 'noch '+t+' Tag'+(t === 1 ? '' : 'e')+' gültig';
+}
+function oeffentlichZeigen(d, fehlerText){
   oeffAktuell = d;
-  const login = '<button class="btn sek" onclick="oeffentlichSchliessen()">'+(rolle !== 'keine' ? 'Zur Gerätekarte' : 'Mitarbeiter-Login')+'</button>';
+  const knopf = fremdModus ? '<button class="btn" onclick="oeffentlichSchliessen()">Nächstes Gerät scannen</button>'
+    : '<button class="btn sek" onclick="oeffentlichSchliessen()">'+(rolle !== 'keine' ? 'Zur Gerätekarte' : 'Mitarbeiter-Login')+'</button>';
+  const kopf = '<div class="oeffKopf"><div class="oeffTitel">DGUV V3 Prüfstatus</div><img src="'+LOGO+'" alt="IWB" class="oeffLogo"></div>';
   if(!d){
-    el('oeffBox').innerHTML = '<div class="oeff"><div class="oeffKarte"><img src="'+LOGO+'" alt="IWB" class="oeffLogo"><h1>Kein Prüfnachweis gefunden</h1>'+
-      '<p class="sub">'+esc(fehlerText || 'Zu diesem QR-Code ist (noch) kein Prüfnachweis hinterlegt. Bitte an die Lehrwerkstatt wenden.')+'</p><div class="werkzeuge">'+login+'</div></div></div>';
+    el('oeffBox').innerHTML = '<div class="oeff"><div class="oeffKarte">'+kopf+'<div class="oeffStatus neu"><div class="sym">?</div><div><b>Unbekannter Code</b>'+
+      '<span>'+esc(fehlerText || 'Zu diesem QR-Code ist kein Gerät hinterlegt. Bitte an die Lehrwerkstatt wenden.')+'</span></div></div><div class="oeffKnopf">'+knopf+'</div></div></div>';
     return;
   }
   if(!D.einst.allg) D.einst.allg = {abteilung: d.abteilung, warnTage: d.warnTage};
-  const g = d, s = status(g), p = d.protokoll;
-  const zeile = (t, v) => v === '' || v == null ? '' : '<div><small>'+t+'</small>'+v+'</div>';
-  el('oeffBox').innerHTML = '<div class="oeff"><div class="oeffKarte">'+
-    '<div class="oeffKopf"><div><div class="oeffTitel">Prüfnachweis DGUV Vorschrift 3</div><div class="sub" style="margin:0">'+esc(d.abteilung || '')+' · elektrische Betriebsmittel</div></div><img src="'+LOGO+'" alt="IWB" class="oeffLogo"></div>'+
-    '<div class="gInv" style="margin-top:14px">'+esc(g.inv)+'</div><div class="gName">'+esc(g.bezeichnung)+'</div>'+
-    '<div class="sub" style="margin:2px 0 0">'+esc([g.hersteller, g.typ].filter(Boolean).join(' · '))+(g.standort ? ' · &#128205; '+esc(g.standort) : '')+'</div>'+
-    '<div class="gStatus '+s.k+'"><div class="sym">'+s.sym+'</div><div><div class="gross">'+esc(s.t)+'</div><div class="sub" style="margin:2px 0 0">'+
-      (g.letzte ? 'Letzte Prüfung '+dmy(g.letzte)+' – '+(g.ergebnis === 'bestanden' ? 'bestanden' : 'nicht bestanden') : 'Bisher keine Prüfung')+(g.naechste && g.status !== 'gesperrt' ? ' · nächste bis '+dmy(g.naechste) : '')+'</div></div></div>'+
-    (p ? '<div class="datenGitter">'+zeile('Geprüft am', dmy(p.datum))+zeile('Prüfart', esc(p.art))+zeile('Durchgeführt von', esc(p.pruefer || p.erfasstVon))+
-      zeile(p.erfasstRolle === 'azubi' ? 'Abgenommen von' : 'Verantwortlich', esc(p.freigabeVon || p.pruefer))+zeile('Schutzklasse', 'SK '+esc(p.sk))+zeile('Prüffrist', esc(g.fristMonate)+' Monate')+'</div>'+
-      '<div class="werkzeuge" style="margin-top:16px"><button class="btn" onclick="oeffentlichPdf()">&#128196; Prüfprotokoll als PDF</button>'+login+'</div>'+
-      '<h2>Prüfprotokoll</h2><div class="protRahmen" style="border:1px solid var(--grau-linie);border-radius:var(--radius-klein);padding:16px;overflow:auto">'+protokollHtml(p, g)+'</div>'
-      : '<div class="werkzeuge" style="margin-top:16px">'+login+'</div>')+
-    '<p class="sub" style="margin:16px 0 0;font-size:11.5px">Stand '+zeitText(d.aktualisiert)+' · Dieser Nachweis wird bei jeder Prüfung automatisch aktualisiert.</p>'+
-    '</div></div>';
+  const s = status(d); let titel, zeile;
+  if(d.status === 'ausgesondert'){ titel = 'Ausgesondert'; zeile = 'Nicht mehr in Betrieb – nicht benutzen.'; }
+  else if(d.status === 'gesperrt'){ titel = 'Gesperrt – nicht benutzen'; zeile = 'Bei der letzten Prüfung'+(d.letzte ? ' am '+dmy(d.letzte) : '')+' nicht bestanden.'; }
+  else if(!d.naechste){ titel = 'Nicht geprüft'; zeile = 'Für dieses Gerät liegt noch keine Prüfung vor.'; }
+  else if(s.k === 'krit'){ titel = 'Prüfung abgelaufen'; zeile = 'Seit '+(-tageBis(d.naechste))+' Tagen überfällig (fällig war '+dmy(d.naechste)+'). Bitte melden.'; }
+  else { titel = s.k === 'warn' ? 'Geprüft – bald fällig' : 'Geprüft'; zeile = restLaufzeit(d.naechste)+' · bis '+dmy(d.naechste); }
+  el('oeffBox').innerHTML = '<div class="oeff"><div class="oeffKarte">'+kopf+
+    '<div class="oeffName">'+esc(d.bezeichnung)+'</div>'+
+    '<div class="oeffOrt">&#128205; '+esc(d.standort || 'Standort nicht angegeben')+'</div>'+
+    '<div class="oeffStatus '+s.k+'"><div class="sym">'+s.sym+'</div><div><b>'+esc(titel)+'</b><span>'+esc(zeile)+'</span></div></div>'+
+    '<div class="oeffKlein">'+esc(d.inv)+(d.letzte ? ' · letzte Prüfung '+dmy(d.letzte) : '')+' · '+esc(d.abteilung || '')+'</div>'+
+    '<div class="oeffKnopf">'+knopf+'</div></div></div>';
 }
-function oeffentlichPdf(){ const d = oeffAktuell; if(d && d.protokoll) drucken(protokollHtml(d.protokoll, d), '@page{size:A4;margin:14mm}'); }
 function oeffentlichSchliessen(){
   const inv = oeffAktuell && oeffAktuell.inv;
   el('oeffBox').innerHTML = ''; oeffAktuell = null;
-  try { history.replaceState(null, '', location.pathname + location.search + (inv ? '#g=' + encodeURIComponent(inv) : '')); } catch(e){}
+  try { history.replaceState(null, '', location.pathname + location.search + (inv && !fremdModus ? '#g=' + encodeURIComponent(inv) : '')); } catch(e){}
+  if(fremdModus) return fremdStart();
   if(inv && rolle !== 'keine') oeffneGeraet(inv);   /* angemeldet: volle Gerätekarte; sonst wartet #g= bis nach dem Login */
   else hashGeoeffnet = false;
 }
 window.addEventListener('hashchange', () => { if(oeffSchluessel()) oeffentlichLaden(); });
+
+/* Vorschau aus der Gerätekarte: so sieht es ein fremdes Handy */
+function fremdVorschau(inv){
+  const g = D.geraete[inv]; if(!g) return;
+  schliesse();
+  const zeigen = () => { try { history.replaceState(null, '', location.pathname + location.search + '#t=' + D.geraete[inv].schluessel); } catch(e){} oeffentlichLaden(); };
+  if(!g.schluessel || (!cloudAktiv && !D.oeffentlich[g.schluessel])){
+    if(!istPruefer()) return alert('Für dieses Gerät gibt es noch keinen Prüfstatus. Ein Prüfer/Ausbilder legt ihn beim nächsten Speichern an.');
+    return schreibe([['set','geraete',inv,Object.assign({}, g)]]).then(zeigen);
+  }
+  zeigen();
+}
+
+/* Testmodus: Rolle „Fremdes Handy (ohne Login)“ */
+function fremdStart(){
+  el('oeffBox').innerHTML = '<div class="oeff"><div class="oeffKarte"><div class="oeffKopf"><div class="oeffTitel">Test: fremdes Handy</div><img src="'+LOGO+'" alt="IWB" class="oeffLogo"></div>'+
+    '<p class="sub" style="margin-top:10px">Simuliert ein Handy ohne Login. Nach dem Scan siehst du genau das, was ein Fremder sieht. Im Testmodus gehen nur Geräte, die in <b>diesem</b> Browser angelegt bzw. eingespielt sind.</p>'+
+    '<div class="oeffKnopf"><button class="btn" onclick="el(\'oeffBox\').innerHTML=\'\';scannerOeffnen()">&#128247; QR-Code scannen</button></div>'+
+    '<div class="werkzeuge" style="margin-top:14px"><input type="text" id="fremdNr" placeholder="oder Nummer, z. B. LW-E-0049" style="flex:1;min-width:180px" onkeydown="if(event.key===\'Enter\')fremdOeffnen(this.value)"><button class="btn sek" onclick="fremdOeffnen(el(\'fremdNr\').value)">Öffnen</button></div>'+
+    '<div class="werkzeuge" style="margin-top:18px"><button class="btn sek" onclick="el(\'testRolle\').value=\'pruefer\';testRolleSetzen(\'pruefer\')">Zurück zur Prüfer-Ansicht</button></div></div></div>';
+}
+function fremdOeffnen(text){
+  const t = String(text || '').trim(); if(!t) return;
+  let k = (t.match(/[#?&]t=([A-Za-z0-9]+)/) || [])[1];
+  if(!k){ const g = D.geraete[codeZuInv(t)]; k = g && g.schluessel; }
+  try { history.replaceState(null, '', location.pathname + location.search + '#t=' + (k || 'UNBEKANNT').toUpperCase()); } catch(e){}
+  oeffentlichLaden();
+}
 
 /* ---------- Start ---------- */
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => ansichtOeffnen(b.dataset.ansicht));
