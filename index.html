@@ -2759,6 +2759,8 @@ function cloudStatus(text, farbe){ el('cloudStatus').innerHTML = '<span style="c
 function firebaseStarten(){
   if(!FIREBASE_KONFIG.apiKey){
     cloudStatus('Lokaler Testmodus', '#E4B23C'); lokalLaden();
+    { const alt = Object.values(D.geraete).filter(g => !g.schluessel || !D.oeffentlich[g.schluessel]);
+      if(alt.length){ oeffentlichErgaenzen(alt.map(g => ['set','geraete',g.inv,g])).forEach(([a,c,id,o]) => { D[c][id] = sauber(o); }); lokalSpeichern(); } }
     let r = 'pruefer'; try { r = sessionStorage.getItem('dguvTestRolle') || 'pruefer'; } catch(e){}
     if(TESTLEISTE){ el('testleiste').style.display = 'flex'; el('testRolle').value = r; }
     testRolleSetzen(r, true); geladen = true; alles(); oeffentlichLaden(); return;
@@ -3126,7 +3128,13 @@ function fremdStart(){
 function fremdOeffnen(text){
   const t = String(text || '').trim(); if(!t) return;
   let k = (t.match(/[#?&]t=([A-Za-z0-9]+)/) || [])[1];
-  if(!k){ const g = D.geraete[codeZuInv(t)]; k = g && g.schluessel; }
+  if(!k){
+    const g = D.geraete[codeZuInv(t)];
+    if(g && !cloudAktiv && (!g.schluessel || !D.oeffentlich[g.schluessel])){
+      oeffentlichErgaenzen([['set','geraete',g.inv,g]]).forEach(([a,c,id,o]) => { D[c][id] = sauber(o); }); lokalSpeichern();
+    }
+    k = g && g.schluessel;
+  }
   try { history.replaceState(null, '', location.pathname + location.search + '#t=' + (k || 'UNBEKANNT').toUpperCase()); } catch(e){}
   oeffentlichLaden();
 }
