@@ -2843,7 +2843,9 @@ function namenWahl(){
       : '<div class="hinweis gelb"><b>Testmodus:</b> Hier gibt es noch keine Personen. Testdaten liegen nur in <b>diesem</b> Browser auf <b>diesem</b> Gerät – was du am PC angelegt hast, sieht das Tablet nicht. Oben in der gelben Leiste „Demodaten einspielen“ oder Rolle „Prüfer“ wählen und unter Einstellungen → Tablet &amp; Personen anlegen.</div>') : '')+
     (az.length ? '<h3>Auszubildende</h3><div class="namengitter">'+az.map(p => knopf(p, false)).join('')+'</div>' : '')+
     (aus.length ? '<h3>Ausbilder</h3><div class="namengitter">'+aus.map(p => knopf(p, true)).join('')+'</div>' : '')+
-    '<div style="margin-top:20px;text-align:right"><button class="btn sek" onclick="standbyAn(false)">Zurück</button></div></div></div>';
+    '<div style="margin-top:20px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">'+
+      (!cloudAktiv ? '<button class="btn" onclick="testRolleVerlassen()">Testmodus: zurück zur Prüfer-Ansicht</button>' : '')+
+      '<button class="btn sek" onclick="standbyAn(false)">Zurück</button></div></div></div>';
 }
 function personWaehlen(id){
   const p = personenListe().find(x => x.id === id); if(!p) return;
@@ -2947,6 +2949,12 @@ function codeAendern(){
 function tabletEinstSpeichern(){
   const m = Number(el('tbMinuten').value); if(!(m >= 1 && m <= 60)) return alert('Bitte 1 bis 60 Minuten.');
   schreibe([['set','einst','tablet',Object.assign({}, tabletEinst(), {minuten: m})]]).then(() => toast('Gespeichert'));
+}
+
+/* Nur im lokalen Testmodus: aus dem Tablet-Betrieb heraus (im Echtbetrieb nur per Sperrcode-Abmeldung) */
+function testRolleVerlassen(){
+  if(cloudAktiv) return;
+  clearInterval(window.__uhrTakt); el('standbyBox').innerHTML = ''; el('testRolle').value = 'pruefer'; testRolleSetzen('pruefer');
 }
 
 /* ---------- Start ---------- */
