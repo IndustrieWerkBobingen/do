@@ -217,6 +217,15 @@ pre.regeln{background:#1E2A33;color:#E6EEF5;padding:14px 16px;border-radius:var(
 
 #druckBereich{display:none}
 
+/* ---------- Öffentlicher Prüfnachweis ---------- */
+.oeff{position:fixed;inset:0;z-index:400;background:linear-gradient(180deg,#F6F8FA 0%,#EEF1F4 100%);overflow:auto;padding:18px 12px 40px}
+.oeffKarte{background:#fff;max-width:860px;margin:0 auto;border-radius:14px;box-shadow:var(--schatten);padding:20px 22px;border-top:5px solid var(--blau)}
+.oeffKopf{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.oeffTitel{font-size:17px;font-weight:700;color:var(--blau-dunkel)}
+.oeffLogo{height:34px}
+.oeff h1{font-size:20px;color:var(--blau-dunkel);margin:12px 0 6px}
+@media(max-width:700px){.oeffKarte{padding:16px 14px}.oeff .protRahmen{zoom:.6}}
+
 /* ---------- Tablet-Betrieb ---------- */
 .tabletband{background:#7A5C2E;color:#fff;padding:6px 20px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 .tabletband b{font-weight:700}
@@ -510,11 +519,12 @@ pre.regeln{background:#1E2A33;color:#E6EEF5;padding:14px 16px;border-radius:var(
       </div>
       <div class="formtitel">QR-Code-Inhalt</div>
       <div class="formgitter">
-        <label class="breit">Adresse dieser Seite (optional)<input type="text" id="eiQrUrl" placeholder="leer lassen = nur Inventarnummer im QR-Code (empfohlen)"></label>
+        <label class="breit">Adresse der Seite (GitHub)<input type="text" id="eiQrUrl" placeholder="z. B. https://name.github.io/dguv/ – leer = aktuelle Adresse"></label>
       </div>
-      <p class="formhinweis">Leer = der QR-Code enth&auml;lt nur die Inventarnummer. Er bleibt dadurch sehr klein und ist auch auf 18-mm-Band sicher lesbar &ndash; gescannt wird mit dem Scanner dieser Seite.
-        Mit Adresse (z. B. <code>https://dguv-lw.web.app</code>) &ouml;ffnet auch die normale Handy-Kamera direkt die Ger&auml;tekarte; der Code wird dann aber dichter. Bereits geklebte Etiketten funktionieren in beiden F&auml;llen weiter.</p>
-      <div class="werkzeuge" style="margin-top:6px"><button class="btn" onclick="einstSpeichern()">Speichern</button></div>
+      <div class="hinweis" id="qrStatus" style="margin:10px 0 0"></div>
+      <p class="formhinweis">Jedes Etikett enth&auml;lt diese Adresse plus einen geheimen Ger&auml;teschl&uuml;ssel. Mit <b>jedem</b> Handy gescannt, &ouml;ffnet sich ohne Login der Pr&uuml;fnachweis mit dem letzten Protokoll (als PDF speicherbar). Mitarbeiter mit Login sehen dar&uuml;ber die volle Ger&auml;tekarte.
+        <b>Vor dem ersten echten Etikettendruck die endg&uuml;ltige Adresse eintragen</b> &ndash; sie steht danach fest im Code. Der Schl&uuml;ssel &auml;ndert sich nie, das Etikett bleibt dauerhaft g&uuml;ltig.</p>
+      <div class="werkzeuge" style="margin-top:6px"><button class="btn" onclick="einstSpeichern()">Speichern</button><button class="btn sek" onclick="qrAdresseUebernehmen()">Aktuelle Adresse &uuml;bernehmen</button><button class="btn sek" onclick="oeffentlichAlle()">Pr&uuml;fnachweise f&uuml;r alle Ger&auml;te erzeugen</button></div>
     </div>
     <div class="karte">
       <h2>Grenzwerte (DIN VDE 0701-0702 / DIN EN 50678 &amp; 50699)</h2>
@@ -605,6 +615,7 @@ pre.regeln{background:#1E2A33;color:#E6EEF5;padding:14px 16px;border-radius:var(
 </button>
 <div id="dialogBox"></div>
 <div id="standbyBox"></div>
+<div id="oeffBox"></div>
 <div id="loginBox"></div>
 <div id="sperreBox"></div>
 <div id="toastBox"></div>
@@ -1893,7 +1904,7 @@ const GRENZ_STD = {rpe:0.3, rpeSchritt:0.1, rpeMeter:7.5, rpeMax:1.0, riso1:1.0,
 const EINST_STD = {abteilung:'Lehrwerkstatt', frist:12, fristBuero:24, warnTage:30, messgeraet:'', messSnr:'', messKal:'', qrUrl:'', standorte:[]};
 const WAHL_TEXT = {ok:'i. O.', mangel:'Mangel', na:'n. z.'};
 
-let D = {geraete:{}, pruefungen:{}, antraege:{}, benutzer:{}, einst:{}};
+let D = {geraete:{}, pruefungen:{}, antraege:{}, benutzer:{}, einst:{}, oeffentlich:{}};
 let cloudAktiv = false, db = null, fbAuth = null, angemeldet = null, rolle = 'keine', meinName = '', meineMail = 'lokal', aktAns = 'uebersicht';
 let hashGeoeffnet = false, geladen = false;
 let tabletKonto = false, tabletPerson = null;   /* Tablet: gemeinsames Konto, Person wird am Tablet gewählt */
@@ -1942,6 +1953,7 @@ function lokalSpeichern(){ try { localStorage.setItem('dguvLW', JSON.stringify(D
 function lokalLaden(){ try { const o = JSON.parse(localStorage.getItem('dguvLW')); if(o) Object.keys(D).forEach(k => D[k] = o[k] || {}); } catch(e){} }
 /* ops: [['set', sammlung, id, objekt] | ['del', sammlung, id]] – alles oder nichts */
 function schreibe(ops){
+  ops = oeffentlichErgaenzen(ops);
   if(!cloudAktiv){ ops.forEach(([a,c,id,o]) => { if(a === 'set') D[c][id] = sauber(o); else delete D[c][id]; }); lokalSpeichern(); alles(); return Promise.resolve(); }
   const teile = []; for(let i = 0; i < ops.length; i += 450) teile.push(ops.slice(i, i+450));
   return teile.reduce((p, t) => p.then(() => { const b = db.batch(); t.forEach(([a,c,id,o]) => { const r = db.collection(c).doc(id); if(a === 'set') b.set(r, sauber(o)); else b.delete(r); }); return b.commit(); }), Promise.resolve())
@@ -1949,16 +1961,52 @@ function schreibe(ops){
 }
 
 /* ---------- QR-Code ---------- */
-function qrInhalt(inv){ const u = (einst().qrUrl || '').trim(); return u ? u.split('#')[0] + '#g=' + encodeURIComponent(inv) : inv; }
+/* Adresse der Seite für den QR-Code: aus den Einstellungen, sonst die aktuelle https-Adresse */
+function qrBasis(){
+  const u = (einst().qrUrl || '').trim(); if(u) return u.split('#')[0];
+  return location.protocol === 'https:' ? location.origin + location.pathname : '';
+}
+/* QR-Inhalt: Link mit geheimem Geräteschlüssel -> öffnet auf jedem Handy den öffentlichen Prüfnachweis */
+function qrInhalt(inv, g){
+  const b = qrBasis(); g = g || D.geraete[inv] || (typeof geraetOderAntrag === 'function' ? geraetOderAntrag(inv) : null);
+  if(!b) return inv;
+  return g && g.schluessel ? b + '#t=' + g.schluessel : b + '#g=' + encodeURIComponent(inv);
+}
+const SCHLUESSEL_ZEICHEN = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function neuerSchluessel(){ const z = new Uint32Array(8); crypto.getRandomValues(z); return Array.from(z, x => SCHLUESSEL_ZEICHEN[x % SCHLUESSEL_ZEICHEN.length]).join(''); }
+/* Bei jedem Schreiben eines Geräts die öffentliche Kopie (Gerät + letztes Protokoll) mitschreiben */
+function oeffentlichErgaenzen(ops){
+  const gOps = ops.filter(o => o[0] === 'set' && o[1] === 'geraete'); if(!gOps.length) return ops;
+  const pr = Object.assign({}, D.pruefungen);
+  ops.forEach(([a,c,id,o]) => { if(c === 'pruefungen'){ if(a === 'set') pr[id] = o; else delete pr[id]; } });
+  const extra = [];
+  gOps.forEach(op => {
+    const g = op[3]; if(!g.schluessel) g.schluessel = neuerSchluessel();
+    const letzte = Object.values(pr).filter(p => p.inv === g.inv).sort((a,b) => String(b.datum+b.erfasstAm).localeCompare(String(a.datum+a.erfasstAm)))[0] || null;
+    extra.push(['set','oeffentlich',g.schluessel,oeffentlichDoc(g, letzte)]);
+  });
+  return ops.concat(extra);
+}
+function oeffentlichDoc(g, p){
+  const o = {};
+  ['inv','bereich','bezeichnung','art','hersteller','typ','seriennr','standort','sk','laenge','heiz','buero','frist','status','letzte','naechste','ergebnis'].forEach(k => o[k] = g[k] == null ? '' : g[k]);
+  o.fristMonate = fristVon(g); o.abteilung = einst().abteilung; o.warnTage = einst().warnTage; o.aktualisiert = new Date().toISOString();
+  o.protokoll = p ? sauber(p) : null;
+  return o;
+}
 function qrSvg(text, groesse, einheit){
-  const q = new QRCode(-1, (einst().qrUrl || '').trim() ? 0 : 3);   /* 3 = Stufe Q (25 % Reserve), 0 = M bei langen Adressen */
+  const q = new QRCode(-1, /^https?:/i.test(text) ? 1 : 3);   /* Link: Stufe L (bleibt klein genug für 14 mm), nur Nummer: Stufe Q */
   q.addData(text); q.make();
   const n = q.getModuleCount(), r = 2, N = n + 2*r; let d = '';
   for(let y = 0; y < n; y++) for(let x = 0; x < n; x++) if(q.isDark(y, x)) d += 'M'+(x+r)+' '+(y+r)+'h1v1h-1z';
   return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+N+' '+N+'" width="'+groesse+(einheit||'mm')+'" height="'+groesse+(einheit||'mm')+'" shape-rendering="crispEdges"><rect width="'+N+'" height="'+N+'" fill="#fff"/><path d="'+d+'" fill="#000"/></svg>';
 }
 function codeZuInv(text){
-  let t = String(text || '').trim(); const m = t.match(/[#?&]g=([^&#]+)/); if(m) t = decodeURIComponent(m[1]);
+  let t = String(text || '').trim();
+  const s = t.match(/[#?&]t=([A-Za-z0-9]+)/);
+  if(s){ const k = s[1].toUpperCase(), g = Object.values(D.geraete).find(x => x.schluessel === k) || ((offeneAntraege().find(a => a.art === 'neu' && a.daten.schluessel === k) || {}).daten);
+    return g ? g.inv : 'Code '+k; }
+  const m = t.match(/[#?&]g=([^&#]+)/); if(m) t = decodeURIComponent(m[1]);
   t = t.toUpperCase().replace(/\s+/g, '');
   const k = t.match(/^LW-?([EMI])-?0*(\d+)$/); if(k) t = 'LW-'+k[1]+'-'+String(k[2]).padStart(4, '0');
   return t;
@@ -2042,7 +2090,7 @@ function alles(){
   if(rolle === 'keine') return;
   const e = einst(); el('topAbteilung').textContent = e.abteilung; el('fussAbteilung').textContent = e.abteilung;
   navZahlen(); zeichneAnsicht(aktAns);
-  if(geladen && !hashGeoeffnet){ hashGeoeffnet = true; if(/[#&]g=/.test(location.hash)) oeffneGeraet(codeZuInv(location.hash)); }
+  if(geladen && !hashGeoeffnet && !oeffSchluessel()){ hashGeoeffnet = true; if(/[#&]g=/.test(location.hash)) oeffneGeraet(codeZuInv(location.hash)); }
 }
 function zeichneAnsicht(a){
   ({uebersicht:zeichneUebersicht, scan:() => {}, geraete:zeichneGeraete, pruefungen:zeichnePruefungen, freigaben:zeichneFreigaben,
@@ -2213,7 +2261,7 @@ function geraetSpeichern(inv){
   const jetzt = new Date().toISOString();
   if(!inv){
     const bereich = el('gfBereich').value, n = naechsteInv(bereich);
-    const g = Object.assign(o, {inv: n.inv, bereich, nr: n.nr, status:'aktiv', letzte:'', naechste:'', ergebnis:'', angelegtAm: heute(), angelegtVon: meinName});
+    const g = Object.assign(o, {inv: n.inv, bereich, nr: n.nr, schluessel: neuerSchluessel(), status:'aktiv', letzte:'', naechste:'', ergebnis:'', angelegtAm: heute(), angelegtVon: meinName});
     if(rolle === 'azubi'){
       const a = {id: neueId(), art:'neu', inv: n.inv, daten: g, von: meineMail, vonName: meinName, am: jetzt, status:'offen'};
       return schreibe([['set','antraege',a.id,a]]).then(() => { schliesse(); neuFertig(n.inv, true); });
@@ -2473,7 +2521,7 @@ function etOhneEtikett(){ etAuswahl = new Set(etQuellen().filter(g => !g.etikett
 function etikettHtml(g, s){
   const B = Number(s.band), L = Number(s.laenge), qr = B >= 18 ? 14 : 9.5, f = B >= 18 ? 1 : 0.72;
   const mitDatum = s.datum && g.naechste && g.status !== 'gesperrt';
-  return '<div class="etikett" style="width:'+L+'mm;height:'+B+'mm;padding:0 1.6mm">'+qrSvg(qrInhalt(g.inv), qr)+
+  return '<div class="etikett" style="width:'+L+'mm;height:'+B+'mm;padding:0 1.6mm">'+qrSvg(qrInhalt(g.inv, g), qr)+
     '<div class="et"><b style="font-size:'+(3.7*f).toFixed(2)+'mm">'+esc(g.inv)+'</b><span style="font-size:'+(2.3*f).toFixed(2)+'mm">'+esc(g.bezeichnung || '')+'</span>'+
     (mitDatum ? '<i style="font-size:'+(2.3*f).toFixed(2)+'mm">Prüfung bis '+mj(g.naechste)+'</i>' : '<span style="font-size:'+(2.0*f).toFixed(2)+'mm">DGUV V3 · '+esc(einst().abteilung)+'</span>')+'</div></div>';
 }
@@ -2485,13 +2533,22 @@ function etVorschau(){
     : '<span class="sub" style="margin:0">Links Geräte anhaken – hier erscheint die Vorschau in etwa 1,5-facher Größe.</span>';
 }
 function etikettenDrucken(liste){
-  const s = etEinst(), l = liste || etGewaehlt(); if(!l.length) return alert('Bitte zuerst Geräte auswählen.');
-  const B = Number(s.band), L = Number(s.laenge);
-  if(s.ziel === 'a4') drucken('<div style="display:flex;flex-wrap:wrap;gap:3mm">'+l.map(g => '<div style="outline:0.2mm dashed #999">'+etikettHtml(g, s)+'</div>').join('')+'</div>', '@page{size:A4;margin:10mm}');
-  else drucken(l.map((g, i) => '<div'+(i < l.length - 1 ? ' style="page-break-after:always;break-after:page"' : '')+'>'+etikettHtml(g, s)+'</div>').join(''),
-    '@page{size:'+L+'mm '+B+'mm;margin:0} html,body{margin:0;padding:0}');
-  /* Druckdatum merken (nur Prüfer darf Geräte direkt schreiben) */
-  if(istPruefer()){ const ops = l.filter(g => !g._antrag && D.geraete[g.inv]).map(g => ['set','geraete',g.inv,Object.assign({}, D.geraete[g.inv], {etikettAm: heute()})]); if(ops.length) setTimeout(() => schreibe(ops).catch(() => {}), 1500); }
+  const s = etEinst(); let l = liste || etGewaehlt(); if(!l.length) return alert('Bitte zuerst Geräte auswählen.');
+  if(!qrBasis() && !confirm('Die Seite läuft nicht über https und in den Einstellungen ist keine Adresse eingetragen.\n\nDer QR-Code enthält dann nur die Nummer – private Handys landen bei Google statt beim Prüfnachweis.\n\nTrotzdem drucken?')) return;
+  const ausgeben = () => {
+    const B = Number(s.band), L = Number(s.laenge);
+    if(s.ziel === 'a4') drucken('<div style="display:flex;flex-wrap:wrap;gap:3mm">'+l.map(g => '<div style="outline:0.2mm dashed #999">'+etikettHtml(g, s)+'</div>').join('')+'</div>', '@page{size:A4;margin:10mm}');
+    else drucken(l.map((g, i) => '<div'+(i < l.length - 1 ? ' style="page-break-after:always;break-after:page"' : '')+'>'+etikettHtml(g, s)+'</div>').join(''),
+      '@page{size:'+L+'mm '+B+'mm;margin:0} html,body{margin:0;padding:0}');
+  };
+  /* Prüfer: Druckdatum merken und fehlende Geräteschlüssel VOR dem Druck vergeben und speichern */
+  if(istPruefer()){
+    const ops = l.filter(g => !g._antrag && D.geraete[g.inv]).map(g => ['set','geraete',g.inv,Object.assign({}, D.geraete[g.inv], {etikettAm: heute()})]);
+    ops.forEach(o => { if(!o[3].schluessel) o[3].schluessel = neuerSchluessel(); });
+    const neu = {}; ops.forEach(o => neu[o[2]] = o[3]); l = l.map(g => neu[g.inv] || g);
+    if(ops.length) return schreibe(ops).then(ausgeben).catch(() => alert('Speichern fehlgeschlagen – Etiketten wurden nicht gedruckt.'));
+  } else if(l.some(g => !g.schluessel) && !confirm('Einige Geräte haben noch keinen Schlüssel für den Handy-Abruf (älterer Stand). Der QR-Code führt dann zum Login statt zum Prüfnachweis. Besser druckt ein Prüfer/Ausbilder diese Etiketten.\n\nTrotzdem drucken?')) return;
+  ausgeben();
 }
 function etikettEinzeln(inv){ const g = D.geraete[inv] || Object.assign({}, geraetOderAntrag(inv), {_antrag:true}); if(!g || !g.inv) return; etikettenDrucken([g]); }
 
@@ -2560,11 +2617,14 @@ function zeichneEinstellungen(){
     || '<tr><td colspan="4" class="sub" style="padding:14px">'+(cloudAktiv ? 'Noch keine Konten.' : 'Im lokalen Testmodus gibt es keine echten Konten – mit dem Umschalter oben die Rollen ausprobieren.')+'</td></tr>';
   el('datenHinweis').textContent = cloudAktiv ? 'Die Daten liegen in Firebase und sind auf allen Geräten gleich. Eine Sicherung als Datei ab und zu schadet trotzdem nicht.' : 'Testmodus: Die Daten liegen nur in diesem Browser. Vor dem Wechsel auf Firebase hier sichern und danach einspielen.';
   el('regelnText').textContent = REGELN;
+  const ohne = Object.values(D.geraete).filter(g => !g.schluessel).length;
+  el('qrStatus').innerHTML = 'QR-Codes verlinken auf: <b>'+(qrBasis() ? esc(qrBasis()) : '– keine Adresse (Seite läuft nicht über https) –')+'</b>'+(ohne ? '<br><span style="color:var(--rot)">'+ohne+' Gerät(e) haben noch keinen Abruf-Schlüssel.</span>' : '');
 }
 function einstSpeichern(){
   const o = {abteilung: el('eiAbteilung').value.trim() || 'Lehrwerkstatt', frist: Number(el('eiFrist').value) || 12, fristBuero: Number(el('eiFristBuero').value) || 24, warnTage: Number(el('eiWarn').value) || 30,
     messgeraet: el('eiMessgeraet').value.trim(), messSnr: el('eiMessSnr').value.trim(), messKal: el('eiMessKal').value, qrUrl: el('eiQrUrl').value.trim(), standorte: einst().standorte || []};
   if(o.qrUrl && !/^https:\/\//i.test(o.qrUrl)) return alert('Die Adresse muss mit https:// beginnen (sonst geht die Kamera nicht).');
+  if(o.qrUrl && /test\.html/i.test(o.qrUrl) && cloudAktiv && !confirm('Die Adresse zeigt auf test.html. Im Echtbetrieb sollte sie auf die normale Seite zeigen. Trotzdem speichern?')) return;
   schreibe([['set','einst','allg',o]]).then(() => toast('Einstellungen gespeichert'));
 }
 function ortSpeichern(liste){ return schreibe([['set','einst','allg',Object.assign({}, einst(), {standorte: liste})]]); }
@@ -2585,6 +2645,15 @@ function ortUmbenennen(o){
   const ops = [['set','einst','allg',Object.assign({}, einst(), {standorte: standorte().map(x => x === o ? n : x)})]];
   Object.values(D.geraete).filter(g => g.standort === o).forEach(g => ops.push(['set','geraete',g.inv,Object.assign({}, g, {standort: n})]));
   schreibe(ops).then(() => { toast('Umbenannt – '+(ops.length-1)+' Gerät(e) angepasst'); zeichneEinstellungen(); });
+}
+function qrAdresseUebernehmen(){
+  if(location.protocol !== 'https:') return alert('Die Seite läuft gerade nicht über https. Bitte die GitHub-Adresse von Hand eintragen.');
+  el('eiQrUrl').value = location.origin + location.pathname.replace(/index\.html$/i, '');
+}
+function oeffentlichAlle(){
+  const l = geraeteListe(); if(!l.length) return;
+  if(!confirm('Für alle '+l.length+' Geräte den Handy-Prüfnachweis neu erzeugen? Fehlende Schlüssel werden vergeben.\n\nSchon geklebte Etiketten bleiben gültig.')) return;
+  schreibe(l.map(g => ['set','geraete',g.inv,Object.assign({}, g)])).then(() => { toast('Prüfnachweise aktualisiert'); zeichneEinstellungen(); });
 }
 function grenzSpeichern(){
   const o = {}; for(const [k, t] of GRENZ_ZEILEN){ const v = zahl(el('gw_'+k).value); if(v === null || v < 0) return alert('Ungültiger Wert bei „'+t+'“.'); o[k] = v; }
@@ -2628,6 +2697,11 @@ service cloud.firestore {
     match /geraete/{id}    { allow read: if drin(); allow write: if pruefer() || tablet(); }
     match /pruefungen/{id} { allow read: if drin(); allow write: if pruefer() || tablet(); }
     match /einst/{id}      { allow read: if drin(); allow write: if pruefer(); }
+    match /oeffentlich/{id} {          // Pruefnachweis fuer den QR-Code: ohne Login nur gezielt abrufbar, keine Liste
+      allow get:   if true;
+      allow list:  if false;
+      allow write: if pruefer() || tablet();
+    }
     match /antraege/{id} {
       allow read:   if drin();
       allow create: if (azubi() || pruefer() || tablet()) && request.resource.data.von == mail()
@@ -2673,7 +2747,7 @@ function firebaseStarten(){
     cloudStatus('Lokaler Testmodus', '#E4B23C'); lokalLaden();
     let r = 'pruefer'; try { r = sessionStorage.getItem('dguvTestRolle') || 'pruefer'; } catch(e){}
     if(TESTLEISTE){ el('testleiste').style.display = 'flex'; el('testRolle').value = r; }
-    testRolleSetzen(r, true); geladen = true; alles(); return;
+    testRolleSetzen(r, true); geladen = true; alles(); oeffentlichLaden(); return;
   }
   cloudStatus('verbinde …', '#E4B23C');
   const q = ['https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js','https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js','https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js'];
@@ -2698,6 +2772,7 @@ function testLeeren(){
 function firebaseBereit(){
   try {
     firebase.initializeApp(FIREBASE_KONFIG); fbAuth = firebase.auth(); db = firebase.firestore(); cloudAktiv = true;
+    oeffentlichLaden();
     el('topAbmelden').style.display = 'inline-block';
     fbAuth.onAuthStateChanged(n => {
       if(n){ angemeldet = n; meineMail = n.email.toLowerCase(); el('loginBox').innerHTML = ''; cloudStatus('verbunden', '#7ED957'); datenLauschen(); }
@@ -2956,6 +3031,52 @@ function testRolleVerlassen(){
   if(cloudAktiv) return;
   clearInterval(window.__uhrTakt); el('standbyBox').innerHTML = ''; el('testRolle').value = 'pruefer'; testRolleSetzen('pruefer');
 }
+
+
+/* ---------- Öffentlicher Prüfnachweis (QR-Scan mit beliebigem Handy, ohne Login) ---------- */
+let oeffAktuell = null;
+const oeffSchluessel = () => { const m = location.hash.match(/[#&]t=([A-Za-z0-9]+)/); return m ? m[1].toUpperCase() : null; };
+function oeffentlichLaden(){
+  const k = oeffSchluessel(); if(!k) return;
+  el('oeffBox').innerHTML = '<div class="oeff"><div class="oeffKarte"><p class="sub" style="text-align:center;padding:40px 0">Prüfnachweis wird geladen …</p></div></div>';
+  if(!cloudAktiv) return oeffentlichZeigen(D.oeffentlich[k] || null, k);
+  db.collection('oeffentlich').doc(k).get().then(s => oeffentlichZeigen(s.exists ? s.data() : null, k))
+    .catch(e => oeffentlichZeigen(null, k, e.code === 'unavailable' ? 'Keine Internetverbindung.' : 'Abruf fehlgeschlagen ('+e.code+').'));
+}
+function oeffentlichZeigen(d, k, fehlerText){
+  oeffAktuell = d;
+  const login = '<button class="btn sek" onclick="oeffentlichSchliessen()">'+(rolle !== 'keine' ? 'Zur Gerätekarte' : 'Mitarbeiter-Login')+'</button>';
+  if(!d){
+    el('oeffBox').innerHTML = '<div class="oeff"><div class="oeffKarte"><img src="'+LOGO+'" alt="IWB" class="oeffLogo"><h1>Kein Prüfnachweis gefunden</h1>'+
+      '<p class="sub">'+esc(fehlerText || 'Zu diesem QR-Code ist (noch) kein Prüfnachweis hinterlegt. Bitte an die Lehrwerkstatt wenden.')+'</p><div class="werkzeuge">'+login+'</div></div></div>';
+    return;
+  }
+  if(!D.einst.allg) D.einst.allg = {abteilung: d.abteilung, warnTage: d.warnTage};
+  const g = d, s = status(g), p = d.protokoll;
+  const zeile = (t, v) => v === '' || v == null ? '' : '<div><small>'+t+'</small>'+v+'</div>';
+  el('oeffBox').innerHTML = '<div class="oeff"><div class="oeffKarte">'+
+    '<div class="oeffKopf"><div><div class="oeffTitel">Prüfnachweis DGUV Vorschrift 3</div><div class="sub" style="margin:0">'+esc(d.abteilung || '')+' · elektrische Betriebsmittel</div></div><img src="'+LOGO+'" alt="IWB" class="oeffLogo"></div>'+
+    '<div class="gInv" style="margin-top:14px">'+esc(g.inv)+'</div><div class="gName">'+esc(g.bezeichnung)+'</div>'+
+    '<div class="sub" style="margin:2px 0 0">'+esc([g.hersteller, g.typ].filter(Boolean).join(' · '))+(g.standort ? ' · &#128205; '+esc(g.standort) : '')+'</div>'+
+    '<div class="gStatus '+s.k+'"><div class="sym">'+s.sym+'</div><div><div class="gross">'+esc(s.t)+'</div><div class="sub" style="margin:2px 0 0">'+
+      (g.letzte ? 'Letzte Prüfung '+dmy(g.letzte)+' – '+(g.ergebnis === 'bestanden' ? 'bestanden' : 'nicht bestanden') : 'Bisher keine Prüfung')+(g.naechste && g.status !== 'gesperrt' ? ' · nächste bis '+dmy(g.naechste) : '')+'</div></div></div>'+
+    (p ? '<div class="datenGitter">'+zeile('Geprüft am', dmy(p.datum))+zeile('Prüfart', esc(p.art))+zeile('Durchgeführt von', esc(p.pruefer || p.erfasstVon))+
+      zeile(p.erfasstRolle === 'azubi' ? 'Abgenommen von' : 'Verantwortlich', esc(p.freigabeVon || p.pruefer))+zeile('Schutzklasse', 'SK '+esc(p.sk))+zeile('Prüffrist', esc(g.fristMonate)+' Monate')+'</div>'+
+      '<div class="werkzeuge" style="margin-top:16px"><button class="btn" onclick="oeffentlichPdf()">&#128196; Prüfprotokoll als PDF</button>'+login+'</div>'+
+      '<h2>Prüfprotokoll</h2><div class="protRahmen" style="border:1px solid var(--grau-linie);border-radius:var(--radius-klein);padding:16px;overflow:auto">'+protokollHtml(p, g)+'</div>'
+      : '<div class="werkzeuge" style="margin-top:16px">'+login+'</div>')+
+    '<p class="sub" style="margin:16px 0 0;font-size:11.5px">Stand '+zeitText(d.aktualisiert)+' · Dieser Nachweis wird bei jeder Prüfung automatisch aktualisiert.</p>'+
+    '</div></div>';
+}
+function oeffentlichPdf(){ const d = oeffAktuell; if(d && d.protokoll) drucken(protokollHtml(d.protokoll, d), '@page{size:A4;margin:14mm}'); }
+function oeffentlichSchliessen(){
+  const inv = oeffAktuell && oeffAktuell.inv;
+  el('oeffBox').innerHTML = ''; oeffAktuell = null;
+  try { history.replaceState(null, '', location.pathname + location.search + (inv ? '#g=' + encodeURIComponent(inv) : '')); } catch(e){}
+  if(inv && rolle !== 'keine') oeffneGeraet(inv);   /* angemeldet: volle Gerätekarte; sonst wartet #g= bis nach dem Login */
+  else hashGeoeffnet = false;
+}
+window.addEventListener('hashchange', () => { if(oeffSchluessel()) oeffentlichLaden(); });
 
 /* ---------- Start ---------- */
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => ansichtOeffnen(b.dataset.ansicht));
