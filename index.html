@@ -618,7 +618,7 @@ pre.regeln{background:#1E2A33;color:#E6EEF5;padding:14px 16px;border-radius:var(
 const TESTLEISTE = true;   /* Rollen-Umschalter im lokalen Testmodus. Im Echtbetrieb ohne Wirkung. */
 
 const FIREBASE_KONFIG = {
-  apiKey:            "",
+  apiKey:            "AIzaSyChQIf0-YbtsQDdcVFMSBruCXzTJK6fQSM",
   authDomain:        "iwb-dguv-3.firebaseapp.com",
   projectId:         "iwb-dguv-3",
   storageBucket:     "iwb-dguv-3.firebasestorage.app",
@@ -2839,7 +2839,8 @@ function namenWahl(){
   el('standbyBox').innerHTML = '<div class="namenwahl" onclick="if(event.target===this)standbyAn(false)"><div class="namenkarte">'+
     '<img src="'+LOGO+'" alt="IWB"><h2>Wer arbeitet gerade?</h2>'+
     '<p>Dein Name wird zu jeder Prüfung gespeichert. Prüfungen von Auszubildenden gibt ein Ausbilder frei.</p>'+
-    (!l.length ? '<div class="hinweis gelb">Noch keine Personen angelegt. Das geht am PC unter <b>Einstellungen → Tablet &amp; Personen</b>.</div>' : '')+
+    (!l.length ? (cloudAktiv ? '<div class="hinweis gelb">Noch keine Personen angelegt. Das geht am PC mit dem Prüfer-Login unter <b>Einstellungen → Tablet &amp; Personen</b>.</div>'
+      : '<div class="hinweis gelb"><b>Testmodus:</b> Hier gibt es noch keine Personen. Testdaten liegen nur in <b>diesem</b> Browser auf <b>diesem</b> Gerät – was du am PC angelegt hast, sieht das Tablet nicht. Oben in der gelben Leiste „Demodaten einspielen“ oder Rolle „Prüfer“ wählen und unter Einstellungen → Tablet &amp; Personen anlegen.</div>') : '')+
     (az.length ? '<h3>Auszubildende</h3><div class="namengitter">'+az.map(p => knopf(p, false)).join('')+'</div>' : '')+
     (aus.length ? '<h3>Ausbilder</h3><div class="namengitter">'+aus.map(p => knopf(p, true)).join('')+'</div>' : '')+
     '<div style="margin-top:20px;text-align:right"><button class="btn sek" onclick="standbyAn(false)">Zurück</button></div></div></div>';
