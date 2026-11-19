@@ -501,7 +501,7 @@ pre.regeln{background:#1E2A33;color:#E6EEF5;padding:14px 16px;border-radius:var(
         <label>Drucken auf<select id="etZiel"><option value="einzeln">P-touch &ndash; einzeln (je Etikett ein Abschnitt)</option><option value="streifen">P-touch &ndash; am St&uuml;ck (weniger Pausen)</option><option value="a4">A4-Testbogen (Originalgr&ouml;&szlig;e)</option></select></label>
         <label class="etNurStreifen">Etiketten je Streifen<input type="number" id="etJeStreifen" min="2" max="12" step="1"></label>
         <label class="haken etNurFahne"><input type="checkbox" id="etFalzMitte"> <span>Faltstrich in der Mitte<small>Kleiner Strich oben und unten &ndash; dort liegt die Leitung</small></span></label>
-        <label class="haken etNurFahne"><input type="checkbox" id="etSkala"> <span>Test: mm-Skala aufdrucken<small>Zum Ausmessen des Faltstrichs, danach wieder aus</small></span></label>
+        <label class="haken etNurFahne"><input type="checkbox" id="etSkala"> <span>Test: mm-Skala bis 200&nbsp;mm<small>Etikett wird dann 200&nbsp;mm lang &ndash; zum Ausmessen, danach wieder aus</small></span></label>
         <label class="haken"><input type="checkbox" id="etDatum"> <span>N&auml;chsten Pr&uuml;ftermin aufdrucken<small>Bei Pr&uuml;fplakette nicht n&ouml;tig</small></span></label>
       </div>
       <p class="formhinweis etNurFahne">Wickelbereich &asymp; Umfang der Leitung: &Oslash;&nbsp;6&nbsp;mm &rarr; 19&nbsp;mm, &Oslash;&nbsp;8&nbsp;mm &rarr; 25&nbsp;mm, &Oslash;&nbsp;10&nbsp;mm &rarr; 31&nbsp;mm. Nach dem Druck um die Leitung legen und die beiden H&auml;lften an den Strichmarken aufeinanderkleben. Standard 140&nbsp;mm: 57,5 + 25 + 57,5&nbsp;mm, Faltstrich bei 70&nbsp;mm. Vorne QR-Code, hinten Logo und Platz f&uuml;r die Pr&uuml;fplakette; das Dreieck zeigt auf den Monat.</p>
@@ -2565,7 +2565,8 @@ function etWahl(cb){ if(cb.checked) etAuswahl.add(cb.dataset.inv); else etAuswah
 function etAlle(an){ document.querySelectorAll('#etListe input[type=checkbox]').forEach(cb => { cb.checked = an; if(an) etAuswahl.add(cb.dataset.inv); else etAuswahl.delete(cb.dataset.inv); }); etVorschau(); }
 function etOhneEtikett(){ etAuswahl = new Set(etQuellen().filter(g => !g.etikettAm).map(g => g.inv)); zeichneEtiketten(); }
 /* Gesamtlänge eines Etiketts in mm */
-const etLaenge = s => s.form === 'fahne' ? 2 * Number(s.seite) + Number(s.wickel) : Number(s.laenge);
+const SKALA_BIS = 200;   /* Test-Skala reicht bis 200 mm; das Etikett wird dafür entsprechend länger gedruckt */
+const etLaenge = s => s.form === 'fahne' ? Math.max(2 * Number(s.seite) + Number(s.wickel), s.skala ? SKALA_BIS : 0) : Number(s.laenge);
 /* Textblock neben dem QR-Code */
 function etText(g, s, f){
   const mitDatum = s.datum && g.naechste && g.status !== 'gesperrt';
@@ -2588,20 +2589,20 @@ function etikettHtml(g, s){
   const xB = S + W, strich = (x) => '<line x1="'+x+'" y1="0" x2="'+x+'" y2="2.2" /><line x1="'+x+'" y1="'+(B-2.2)+'" x2="'+x+'" y2="'+B+'" />';
   const falz = s.falzMitte !== false ? L / 2 : 0;   /* Faltstrich genau in der Mitte – dort liegt die Leitung */
   /* Testskala: Striche alle 1 mm (5er/10er länger), Zahlen alle 10 mm – zum Ausmessen des Faltstrichs */
-  let skala = '';
+  let skala = ''; const LS = s.skala ? Math.max(L, SKALA_BIS) : L;
   if(s.skala){
-    for(let x = 0; x <= L + 0.01; x++){ if(x > rand - 0.5 && x < rand + qr + 0.5) continue;   /* QR-Code freihalten */
+    for(let x = 0; x <= LS + 0.01; x++){ if(x > rand - 0.5 && x < rand + qr + 0.5) continue;   /* QR-Code freihalten */
       const len = x % 10 === 0 ? 2.3 : x % 5 === 0 ? 1.7 : 1.15;
       skala += '<line x1="'+x+'" y1="'+(B - len)+'" x2="'+x+'" y2="'+B+'" stroke="#000" stroke-width="'+(x % 10 === 0 ? 0.22 : 0.14)+'"/>';
-      if(x % 10 === 0 && x > 0 && x < L) skala += '<text x="'+x+'" y="'+(B - 2.6)+'" font-size="1.7" font-family="Arial,Helvetica,sans-serif" text-anchor="middle" fill="#000">'+x+'</text>'; }
+      if(x % 10 === 0 && x > 0 && x < LS) skala += '<text x="'+x+'" y="'+(B - 2.6)+'" font-size="1.7" font-family="Arial,Helvetica,sans-serif" text-anchor="middle" fill="#000">'+x+'</text>'; }
   }
   const tipX = cx - D/2 - triGap;
-  return '<div class="etikett etFahne" style="width:'+L+'mm;height:'+B+'mm;position:relative">'+
+  return '<div class="etikett etFahne" style="width:'+LS+'mm;height:'+B+'mm;position:relative">'+
     '<div style="position:absolute;left:'+rand+'mm;top:0;width:'+(S - rand - 1)+'mm;height:'+B+'mm;display:flex;align-items:center">'+qrSvg(qrInhalt(g.inv, g), qr)+'<div class="et">'+etText(g, s, f)+'</div></div>'+
     '<div style="position:absolute;left:'+(xB + rand)+'mm;top:0;height:'+B+'mm;display:flex;align-items:center;gap:1.2mm">'+
       '<img src="'+LOGO_IWB+'" alt="iwb" style="height:'+iwbH.toFixed(2)+'mm;width:'+iwbB.toFixed(2)+'mm;display:block">'+
       '<div style="font-family:Arial,Helvetica,sans-serif;font-size:'+fs.toFixed(2)+'mm;line-height:1.05;color:#000;white-space:nowrap">industriepark<br>werk<br>bobingen</div></div>'+
-    '<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;left:0;top:0" width="'+L+'mm" height="'+B+'mm" viewBox="0 0 '+L+' '+B+'">'+
+    '<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;left:0;top:0" width="'+LS+'mm" height="'+B+'mm" viewBox="0 0 '+LS+' '+B+'">'+
       '<g stroke="#000" stroke-width="0.25" fill="none">'+(falz > 0 && falz < L ? strich(falz) : '')+'</g>'+
       skala+'<path d="M'+(tipX - tri).toFixed(2)+' '+(cy - triH/2).toFixed(2)+' L'+tipX.toFixed(2)+' '+cy.toFixed(2)+' L'+(tipX - tri).toFixed(2)+' '+(cy + triH/2).toFixed(2)+' Z" fill="#000"/>'+
     '</svg></div>';
