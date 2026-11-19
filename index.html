@@ -504,7 +504,7 @@ pre.regeln{background:#1E2A33;color:#E6EEF5;padding:14px 16px;border-radius:var(
         <label class="haken etNurFahne"><input type="checkbox" id="etSkala"> <span>Test: mm-Skala bis 200&nbsp;mm<small>Etikett wird dann 200&nbsp;mm lang &ndash; zum Ausmessen, danach wieder aus</small></span></label>
         <label class="haken"><input type="checkbox" id="etDatum"> <span>N&auml;chsten Pr&uuml;ftermin aufdrucken<small>Bei Pr&uuml;fplakette nicht n&ouml;tig</small></span></label>
       </div>
-      <p class="formhinweis etNurFahne">Wickelbereich &asymp; Umfang der Leitung: &Oslash;&nbsp;6&nbsp;mm &rarr; 19&nbsp;mm, &Oslash;&nbsp;8&nbsp;mm &rarr; 25&nbsp;mm, &Oslash;&nbsp;10&nbsp;mm &rarr; 31&nbsp;mm. Nach dem Druck um die Leitung legen und die beiden H&auml;lften an den Strichmarken aufeinanderkleben. Standard 160&nbsp;mm: 67,5 + 25 + 67,5&nbsp;mm, Faltstrich mittig bei 80&nbsp;mm, zwei Striche markieren das Ende bei 160&nbsp;mm. Vorne QR-Code, hinten Logo mit Dreieck direkt dahinter &ndash; die Pr&uuml;fplakette kommt rechts ans Dreieck, es zeigt auf den Monat.</p>
+      <p class="formhinweis etNurFahne">Wickelbereich &asymp; Umfang der Leitung: &Oslash;&nbsp;6&nbsp;mm &rarr; 19&nbsp;mm, &Oslash;&nbsp;8&nbsp;mm &rarr; 25&nbsp;mm, &Oslash;&nbsp;10&nbsp;mm &rarr; 31&nbsp;mm. Nach dem Druck um die Leitung legen und die beiden H&auml;lften an den Strichmarken aufeinanderkleben. Standard 120&nbsp;mm (2 &times; 60&nbsp;mm): Faltstrich mittig bei 60&nbsp;mm, zwei Striche markieren das Ende. <b>Im Brother-Treiber muss die Bandl&auml;nge auf dieselbe L&auml;nge eingestellt sein</b> (sonst wird verkleinert). Vorne QR-Code, hinten Logo mit Dreieck direkt dahinter &ndash; die Pr&uuml;fplakette kommt rechts ans Dreieck, es zeigt auf den Monat.</p>
       <h2>3. Vorschau <span class="sub" id="etZahl" style="font-weight:400"></span></h2>
       <div class="etikettVorschau" id="etVorschau"></div>
       <div class="werkzeuge" style="margin-top:14px">
@@ -2531,18 +2531,18 @@ function zurueckziehen(id){ if(!confirm('Antrag zurückziehen?')) return; schrei
 
 /* ---------- Etiketten ---------- */
 let etAuswahl = new Set();
-const ET_STD = {band:18, form:'fahne', laenge:50, seite:67.5, wickel:25, plakette:11, ziel:'einzeln', jeStreifen:5, datum:false, skala:false, falzMitte:true, v:5};
+const ET_STD = {band:18, form:'fahne', laenge:50, seite:47.5, wickel:25, plakette:11, ziel:'einzeln', jeStreifen:5, datum:false, skala:false, falzMitte:true, v:6};
 function etEinst(){
   let o = {}; try { o = JSON.parse(localStorage.getItem('dguvEtikett')) || {}; } catch(e){}
   if(o.ziel === 'ptouch') o.ziel = 'einzeln';                 /* ältere Einstellung */
   if(!o.form){ o.datum = false; }                             /* Umstieg auf Kabelfahne: Datum aus, dafür Prüfplakette */
-  if(o.v !== 5){ delete o.seite; delete o.wickel; delete o.falz; delete o.falzMitte; delete o.skala; o.v = 5; }   /* Fahne v5: 160 mm, Endstriche, Faltstrich mittig bei 80 */
+  if(o.v !== 6){ delete o.seite; delete o.wickel; delete o.falz; delete o.falzMitte; delete o.skala; o.v = 6; }   /* Fahne v6: 120 mm (2 x 60), Faltstrich mittig bei 60, Endstriche */
   return Object.assign({}, ET_STD, o);
 }
 function etEinstSpeichern(){
   const n = (id, d) => { const v = Number(el(id).value); return isFinite(v) && v > 0 ? v : d; };
   try { localStorage.setItem('dguvEtikett', JSON.stringify({band: n('etBand', 18), form: el('etForm').value, laenge: n('etLaenge', 50), seite: n('etSeite', 38), wickel: n('etWickel', 25),
-    plakette: n('etPlakette', 11), ziel: el('etZiel').value, jeStreifen: Math.round(n('etJeStreifen', 5)), datum: el('etDatum').checked, skala: el('etSkala').checked, falzMitte: el('etFalzMitte').checked, v:5})); } catch(e){}
+    plakette: n('etPlakette', 11), ziel: el('etZiel').value, jeStreifen: Math.round(n('etJeStreifen', 5)), datum: el('etDatum').checked, skala: el('etSkala').checked, falzMitte: el('etFalzMitte').checked, v:6})); } catch(e){}
   etFormUmschalten(); etVorschau();
 }
 function etFormUmschalten(){
